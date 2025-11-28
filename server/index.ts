@@ -2,10 +2,11 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import session from "express-session"; // <-- NEW: Required for Passport sessions
 import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import messRoutes from "./routes/messRoutes";
-import passport from "passport"; 
+import passport from "passport";
 import setupGoogleStrategy from "./config/passport";
 
 dotenv.config();
@@ -14,37 +15,55 @@ connectDB();
 
 const app = express();
 
-// --- Middleware ---
-app.use(express.json()); // Body parser for raw JSON
-app.use(express.urlencoded({ extended: true })); // Body parser for form data
-app.use(cookieParser()); // Allows reading and setting cookies
+// --- Global Environment Variables ---
+const PORT = process.env.PORT || 5000;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173"; // Should be your Vercel URL
+const SESSION_SECRET = process.env.SESSION_SECRET || "a-strong-default-secret"; // Load from Render ENV
 
-// Configure CORS for security (allows frontend to talk to backend)
-// CHANGE THE ORIGIN TO YOUR DEPLOYED FRONTEND URL LATER!
-const allowedOrigins = process.env.CLIENT_URL || 'http://localhost:5173'
+// --- Middleware ---
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// 1. Configure CORS
 app.use(
   cors({
-    origin: allowedOrigins,
-    credentials: true, // Crucial for sending/receiving HTTP-only cookies
+    origin: CLIENT_URL, // Whitelists your Vercel frontend URL
+    credentials: true, // Crucial for sending/receiving cookies across domains
   })
 );
 
-// --- Passport Initialization ---
-// Passport needs session middleware to track sessions (even if we use JWT for actual auth)
-app.use(passport.initialize()); 
-// Passport session is required for Passport's built-in session management (even for OAuth flow)
-// Note: We are NOT using Express Session store, Passport handles the temp session for OAuth.
-// If you were to use a full session, you would need `express-session` here. 
-// We are keeping it minimal as our primary auth is JWT-cookie.
-// app.use(passport.session()); // Omit this line for stateless JWT usage
+// 2. Express Session Middleware (CRUCIAL FIX for 401)
+// This must run before passport.initialize()
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+      maxAge: 24 * 60 * 60 * 1000, // Session duration (24 hours)
+      // Set secure: true in production, but use a conditional check
+      secure: process.env.NODE_ENV === "production",
+      httpOnly: true,
+      sameSite: "lax", // Best balance for cross-site requests
+    },
+  })
+);
 
-// Initialize the Google Strategy
-setupGoogleStrategy(); // <--- NEW CALL
+// 3. Initialize Passport (MUST be after session middleware)
+app.use(passport.initialize());
+app.use(passport.session()); // <-- UNCOMMENTED/ADDED: Enables session tracking for req.isAuthenticated()
+
+// 4. Initialize the Google Strategy (and define serialize/deserialize)
+setupGoogleStrategy();
 
 // --- Routes ---
+// Simple test route to check server status
+app.get("/", (req, res) => {
+  res.send(`Server running. Frontend URL: ${CLIENT_URL}`);
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/messes", messRoutes);
-
-const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
