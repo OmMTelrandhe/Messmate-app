@@ -1,0 +1,5 @@
+{
+  "name": "MessMate",
+  "description": "A website to find and review tiffin/mess services nearby. Users can search, filter, and add new mess listings, as well as post reviews and ratings.",
+  "requestFramePermissions": []
+}
