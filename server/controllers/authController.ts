@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import User, { IUser } from "../models/User";
 import generateTokenAndSetCookie from "../utils/generateToken";
 import { UserRole } from "../types"; // Use your existing type
@@ -102,19 +102,18 @@ export const getProfile = async (req: Request, res: Response) => {
 // @desc    Handle successful Google OAuth login
 // @route   GET /api/auth/google/success
 export const googleAuthSuccess = (req: Request, res: Response) => {
-    // Passport attaches the user to req.user upon successful authentication
-    const user = req.user as any; 
+  // Passport attaches the user to req.user upon successful authentication
+  const user = req.user as any;
 
-    if (user) {
-        // Generate and set the secure HTTP-only JWT cookie
-        generateToken(res, user._id); 
+  if (user) {
+    // Generate and set the secure HTTP-only JWT cookie
+    generateToken(res, user._id);
 
-        // Redirect the user back to the frontend homepage
-        const clientURL = process.env.CLIENT_URL || 'http://localhost:5173';
-        return res.redirect(clientURL); 
-    } else {
-        // Should not happen if Passport ran correctly
-        res.status(401).json({ message: 'Google authentication failed.' });
-    }
+    // Redirect the user back to the frontend homepage
+    const clientURL = process.env.CLIENT_URL || "http://localhost:5173";
+    return res.redirect(clientURL);
+  } else {
+    // Should not happen if Passport ran correctly
+    res.status(401).json({ message: "Google authentication failed." });
+  }
 };
-
