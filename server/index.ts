@@ -2,7 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import session from "express-session"; // <-- NEW: Required for Passport sessions
+import session from "express-session";
 import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import messRoutes from "./routes/messRoutes";
@@ -17,8 +17,8 @@ const app = express();
 
 // --- Global Environment Variables ---
 const PORT = process.env.PORT || 5000;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173"; // Should be your Vercel URL
-const SESSION_SECRET = process.env.SESSION_SECRET || "a-strong-default-secret"; // Load from Render ENV
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const SESSION_SECRET = process.env.SESSION_SECRET || "a-strong-default-secret";
 
 // --- Middleware ---
 app.use(express.json());
@@ -33,7 +33,7 @@ app.use(
   })
 );
 
-// 2. Express Session Middleware (CRUCIAL FIX for 401)
+// 2. Express Session Middleware (CRUCIAL FIX)
 // This must run before passport.initialize()
 app.use(
   session({
@@ -41,18 +41,24 @@ app.use(
     resave: false,
     saveUninitialized: true,
     cookie: {
-      maxAge: 24 * 60 * 60 * 1000, // Session duration (24 hours)
-      // Set secure: true in production, but use a conditional check
+      maxAge: 24 * 60 * 60 * 1000,
+
+      // *** FIX 1: Ensure secure flag is ALWAYS true in production (Render uses HTTPS) ***
+      // We rely on NODE_ENV being set to 'production' on Render
       secure: process.env.NODE_ENV === "production",
+
       httpOnly: true,
-      sameSite: "lax", // Best balance for cross-site requests
+
+      // *** FIX 2: Change to 'none' for cross-domain access (Vercel to Render) ***
+      // 'lax' blocks the cookie transfer needed for /api/auth/me check
+      sameSite: "none",
     },
   })
 );
 
 // 3. Initialize Passport (MUST be after session middleware)
 app.use(passport.initialize());
-app.use(passport.session()); // <-- UNCOMMENTED/ADDED: Enables session tracking for req.isAuthenticated()
+app.use(passport.session());
 
 // 4. Initialize the Google Strategy (and define serialize/deserialize)
 setupGoogleStrategy();
