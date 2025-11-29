@@ -27,7 +27,7 @@
     // should re-add 'typeRoots' and ensure 'types' is also present.
     // If you remove 'typeRoots', your Express types should still be auto-discovered
     // via 'node_modules/@types'.
-    "typeRoots": ["./node_modules/@types"],
+    // "typeRoots": ["./node_modules/@types"],
   },
   "include": [
     "./**/*.ts",
