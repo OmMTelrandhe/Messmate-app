@@ -1,25 +1,37 @@
 {
   "compilerOptions": {
     /* Basic Options */
-    "target": "es2020",                         /* Specify ECMAScript target version */
-    "module": "commonjs",                       /* Specify module code generation: Node.js standard */
-    "rootDir": "./",                            /* Specify the root directory of input files */
-    "outDir": "./dist",                         /* Redirect output structure to this directory (where compiled JS goes) */
-    "esModuleInterop": true,                    /* Enables compatibility with CommonJS modules */
-    "forceConsistentCasingInFileNames": true,   /* Ensure that file names are consistent */
+    "target": "es2020",
+    "module": "commonjs",
+    "rootDir": "./",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
 
     /* Strict Type-Checking Options */
-    "strict": true,                             /* Enable all strict type-checking options */
-    "skipLibCheck": true,                       /* Skip type checking of declaration files */
+    "strict": true,
+    "skipLibCheck": true,
     
     /* Advanced Options */
-    "sourceMap": true,                          /* Generates corresponding .map file */
-    "typeRoots": ["./types", "./node_modules/@types", "../node_modules/@types"] /* Include local global augmentations and node types */
+    "sourceMap": true,
+
+    // ➡️ CRITICAL FIX: Explicitly include Node.js types
+    "types": ["node"], 
+    
+    // ➡️ Recommended: Remove typeRoots if you are using 'types'. 
+    // When 'types' is present, typeRoots is ignored. Since you only need Node types, 
+    // simply using 'types' is cleaner and safer.
+    // I've removed your original 'typeRoots' setting below for simplicity and compliance
+    // with standard TypeScript best practices. If you have custom local types, you
+    // should re-add 'typeRoots' and ensure 'types' is also present.
+    // If you remove 'typeRoots', your Express types should still be auto-discovered
+    // via 'node_modules/@types'.
+    "typeRoots": ["./node_modules/@types"],
   },
   "include": [
-    "./**/*.ts",                                /* Include all TypeScript files in the server folder */
-    "./**/*.d.ts"                               /* Include declaration augmentations */
+    "./**/*.ts",
+    "./**/*.d.ts"
   ],
   "exclude": [
     "node_modules"
