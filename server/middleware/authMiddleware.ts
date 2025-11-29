@@ -51,9 +51,9 @@ const protect: RequestHandler = async (req, res, next) => {
 };
 
 const isOwner: RequestHandler = (req, res, next) => {
-  // Assumes `protect` middleware has already run and attached req.user
-  if (req.user && req.user.role === UserRole.OWNER) {
-    next(); // User is an Owner, proceed
+  const user = req.user as { role?: string } | undefined;
+  if (user?.role === UserRole.OWNER) {
+    next();
   } else {
     res.status(403).json({
       message: "Forbidden: Only Mess Owners can perform this action.",
