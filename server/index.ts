@@ -15,6 +15,11 @@ connectDB();
 
 const app = express();
 
+// --- CRUCIAL FIX: TRUST PROXY HEADERS ---
+// This line tells Express to trust the headers sent by Render's load balancer.
+// This is required for the 'secure: true' cookie setting to work when using sameSite: 'none' over HTTPS.
+app.set("trust proxy", 1); // <--- ADDED THIS LINE
+
 // --- Global Environment Variables ---
 const PORT = process.env.PORT || 5000;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
@@ -28,12 +33,12 @@ app.use(cookieParser());
 // 1. Configure CORS
 app.use(
   cors({
-    origin: CLIENT_URL, // Whitelists your Vercel frontend URL
-    credentials: true, // Crucial for sending/receiving cookies across domains
+    origin: CLIENT_URL,
+    credentials: true,
   })
 );
 
-// 2. Express Session Middleware (CRUCIAL FIX)
+// 2. Express Session Middleware
 // This must run before passport.initialize()
 app.use(
   session({
@@ -43,14 +48,12 @@ app.use(
     cookie: {
       maxAge: 24 * 60 * 60 * 1000,
 
-      // *** FIX 1: Ensure secure flag is ALWAYS true in production (Render uses HTTPS) ***
-      // We rely on NODE_ENV being set to 'production' on Render
+      // secure: true is now correctly enabled by 'trust proxy'
       secure: process.env.NODE_ENV === "production",
 
       httpOnly: true,
 
-      // *** FIX 2: Change to 'none' for cross-domain access (Vercel to Render) ***
-      // 'lax' blocks the cookie transfer needed for /api/auth/me check
+      // Required for Vercel -> Render cross-site request
       sameSite: "none",
     },
   })
