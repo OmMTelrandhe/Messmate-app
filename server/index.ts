@@ -23,7 +23,7 @@ app.set("trust proxy", 1);
 // ➡️ FIX 1: Use parseInt() to ensure PORT is a number (Fixes TS2769)
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
-const SESSION_SECRET = process.env.SESSION_SECRET || "b83e9b1238350ecc51095c274bdddbea";
+const SESSION_SECRET = "b83e9b1238350ecc51095c274bdddbea";
 
 // ➡️ FIX 2: Define the host to listen on all interfaces (0.0.0.0)
 const HOST = '0.0.0.0'; 
@@ -46,7 +46,7 @@ app.use(
 // This must run before passport.initialize()
 app.use(
   session({
-    secret: SESSION_SECRET,
+    secret: "b83e9b1238350ecc51095c274bdddbea",
     resave: false,
     saveUninitialized: true,
     cookie: {
