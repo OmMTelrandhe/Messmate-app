@@ -1,8 +1,88 @@
+// import express, { Request, Response } from "express"; // Import Request/Response types
+// import dotenv from "dotenv";
+// import cors from "cors";
+// import cookieParser from "cookie-parser";
+// import session from "express-session";
+// import connectDB from "./config/db";
+// import authRoutes from "./routes/authRoutes";
+// import messRoutes from "./routes/messRoutes";
+// import passport from "passport";
+// import setupGoogleStrategy from "./config/passport";
+
+// dotenv.config();
+
+// connectDB();
+
+// const app = express();
+
+// // --- CRUCIAL FIX: TRUST PROXY HEADERS ---
+// // This is essential for secure cookies (secure: true) to work behind Railway's load balancer.
+// app.set("trust proxy", 1); 
+
+// // --- Global Environment Variables ---
+// // ➡️ FIX 1: Use parseInt() to ensure PORT is a number (Fixes TS2769)
+// const PORT = parseInt(process.env.PORT || '5000', 10);
+// const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+// const SESSION_SECRET = "b83e9b1238350ecc51095c274bdddbea";
+
+// // ➡️ FIX 2: Define the host to listen on all interfaces (0.0.0.0)
+// const HOST = '0.0.0.0'; 
+
+// // --- Middleware ---
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
+// app.use(cookieParser());
+
+// // 1. Configure CORS
+// app.use(
+//   cors({
+//     // Use the single CLIENT_URL from the environment variable
+//     origin: CLIENT_URL, 
+//     credentials: true,
+//   })
+// );
+
+// // 2. Express Session Middleware
+// // This must run before passport.initialize()
+// app.use(
+//   session({
+//     secret: "b83e9b1238350ecc51095c274bdddbea",
+//     resave: false,
+//     saveUninitialized: true,
+//     cookie: {
+//       maxAge: 24 * 60 * 60 * 1000,
+
+//       // secure: true is now correctly enabled by 'trust proxy'
+//       secure: true,
+
+//       httpOnly: true,
+
+//       // Required for Netlify -> Railway cross-site request
+//       sameSite: "none",
+//     },
+//   })
+// );
+
+// // 3. Initialize Passport (MUST be after session middleware)
+// app.use(passport.initialize());
+// app.use(passport.session());
+
+// // 4. Initialize the Google Strategy (and define serialize/deserialize)
+// setupGoogleStrategy();
+
+// // --- Routes ---
+// // Simple test route to check server status
+// app.get("/", (req: Request, res: Response) => {
+//   res.send(`Server running. Frontend URL: ${CLIENT_URL}`);
+// });
+
+// app.use("/api/auth", authRoutes);
+
 import express, { Request, Response } from "express"; // Import Request/Response types
 import dotenv from "dotenv";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import session from "express-session";
+// import session from "express-session"; // REMOVED: No longer using sessions
 import connectDB from "./config/db";
 import authRoutes from "./routes/authRoutes";
 import messRoutes from "./routes/messRoutes";
@@ -16,14 +96,14 @@ connectDB();
 const app = express();
 
 // --- CRUCIAL FIX: TRUST PROXY HEADERS ---
-// This is essential for secure cookies (secure: true) to work behind Railway's load balancer.
+// This line is now optional for cookies but good practice for load balancers
 app.set("trust proxy", 1); 
 
 // --- Global Environment Variables ---
 // ➡️ FIX 1: Use parseInt() to ensure PORT is a number (Fixes TS2769)
 const PORT = parseInt(process.env.PORT || '5000', 10);
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
-const SESSION_SECRET = "b83e9b1238350ecc51095c274bdddbea";
+// SESSION_SECRET is no longer needed, using JWT_SECRET instead
 
 // ➡️ FIX 2: Define the host to listen on all interfaces (0.0.0.0)
 const HOST = '0.0.0.0'; 
@@ -31,53 +111,47 @@ const HOST = '0.0.0.0';
 // --- Middleware ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
+// cookieParser is kept for any other non-session cookies, but not required for auth
+app.use(cookieParser()); 
 
 // 1. Configure CORS
 app.use(
-  cors({
-    // Use the single CLIENT_URL from the environment variable
-    origin: CLIENT_URL, 
-    credentials: true,
-  })
+  cors({
+    // Use the single CLIENT_URL from the environment variable
+    origin: CLIENT_URL, 
+    credentials: true, // IMPORTANT: Keep this, even without cookies, to allow header exchange
+  })
 );
 
-// 2. Express Session Middleware
-// This must run before passport.initialize()
+// 2. Express Session Middleware - REMOVED!
+// The block below is now GONE:
+/*
 app.use(
-  session({
-    secret: "b83e9b1238350ecc51095c274bdddbea",
-    resave: false,
-    saveUninitialized: true,
-    cookie: {
-      maxAge: 24 * 60 * 60 * 1000,
-
-      // secure: true is now correctly enabled by 'trust proxy'
-      secure: true,
-
-      httpOnly: true,
-
-      // Required for Netlify -> Railway cross-site request
-      sameSite: "none",
-    },
-  })
+  session({
+    // ... all session settings removed
+  })
 );
+*/
 
-// 3. Initialize Passport (MUST be after session middleware)
+// 3. Initialize Passport (MUST be after cors/body parser)
 app.use(passport.initialize());
-app.use(passport.session());
+// passport.session() is REMOVED!
 
-// 4. Initialize the Google Strategy (and define serialize/deserialize)
+// 4. Initialize the Google Strategy (and define *new* JWT success/failure logic)
 setupGoogleStrategy();
 
 // --- Routes ---
 // Simple test route to check server status
 app.get("/", (req: Request, res: Response) => {
-  res.send(`Server running. Frontend URL: ${CLIENT_URL}`);
+  res.send(`Server running. Frontend URL: ${CLIENT_URL}`);
 });
 
 app.use("/api/auth", authRoutes);
 app.use("/api/messes", messRoutes);
 
-// ➡️ FIX 3 & 4: Listen on the converted PORT and specified HOST
+// ➡️ Listen on the converted PORT and specified HOST
 app.listen(PORT, HOST, () => console.log(`Server running on ${HOST}:${PORT}`));
+// app.use("/api/messes", messRoutes);
+
+// // ➡️ FIX 3 & 4: Listen on the converted PORT and specified HOST
+// app.listen(PORT, HOST, () => console.log(`Server running on ${HOST}:${PORT}`));
