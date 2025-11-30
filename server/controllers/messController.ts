@@ -13,10 +13,10 @@ export const listMesses = async (_req: Request, res: Response) => {
 
 export const createMess = async (req: Request, res: Response) => {
   try {
-    const { name, address, contact, price, googleMapsLink } = req.body;
+    const { name, address, contact, price, googleMapsLink, city, state, cuisineType } = req.body;
     const ownerId = req.user?._id?.toString() || "anonymous";
 
-    if (!name || !address || !contact || !price || !googleMapsLink) {
+    if (!name || !address || !contact || !price || !googleMapsLink || !city || !state || !cuisineType) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -24,6 +24,9 @@ export const createMess = async (req: Request, res: Response) => {
       name,
       address,
       contact,
+      city,
+      state,
+      cuisineType,
       price,
       googleMapsLink,
       ownerId,

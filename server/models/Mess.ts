@@ -18,6 +18,9 @@ export interface IMess extends Document {
   name: string;
   address: string;
   contact: string;
+  city?: string;
+  state?: string;
+  cuisineType?: string;
   price: IPrice;
   reviews: IReview[];
   googleMapsLink: string;
@@ -48,6 +51,9 @@ const MessSchema = new Schema<IMess>(
     name: { type: String, required: true },
     address: { type: String, required: true },
     contact: { type: String, required: true },
+    city: { type: String },
+    state: { type: String },
+    cuisineType: { type: String, enum: ["VEG", "NON_VEG", "BOTH"], default: "VEG" },
     price: { type: PriceSchema, required: true },
     reviews: { type: [ReviewSchema], default: [] },
     googleMapsLink: { type: String, required: true },
