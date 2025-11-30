@@ -18,8 +18,8 @@ router.get('/me', protect, getProfile);
 router.get(
     '/google', 
     passport.authenticate('google', { 
-        scope: ['profile', 'email'], // Request access to profile and email
-        session: false
+        // scope: ['profile', 'email'], // Request access to profile and email
+        // session: false
     })
 );
 
@@ -29,7 +29,7 @@ router.get(
     '/google/callback', 
     passport.authenticate('google', { 
         failureRedirect: '/', // Redirect to homepage on failure 
-        session: false
+        // session: false
         // Note: successRedirect is handled by `googleAuthSuccess` redirect
     }),
     googleAuthSuccess // Use the success handler to set the JWT cookie and redirect to client
