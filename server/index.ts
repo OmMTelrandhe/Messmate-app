@@ -37,7 +37,7 @@ app.use(cookieParser());
 app.use(
   cors({
     // Use the single CLIENT_URL from the environment variable
-    origin: CLIENT_URL, 
+    origin: '*', 
     credentials: true,
   })
 );
