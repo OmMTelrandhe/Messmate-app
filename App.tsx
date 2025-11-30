@@ -7,6 +7,7 @@ import AddMessModal from "./components/modals/AddMessModal";
 import MessDetailModal from "./components/modals/MessDetailModal";
 import LoginRegisterModal from "./components/modals/LoginRegisterModal";
 import { authAPI } from "./api/auth";
+import apiClient from "./api/axiosClient";
 
 const API_URL =
   (import.meta as any).env?.VITE_API_URL || "http://localhost:5000";
@@ -47,6 +48,15 @@ export default function App() {
   const [isAuthLoading, setIsAuthLoading] = useState(true); // To check profile on load
 
   useEffect(() => {
+    if (window.location.pathname === "/auth/callback") {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get("token");
+      if (token) {
+        localStorage.setItem("jwtToken", token);
+      }
+      window.history.replaceState({}, "", "/");
+    }
+
     const checkUserProfile = async () => {
       try {
         const user = await authAPI.getProfile();
@@ -196,19 +206,12 @@ export default function App() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/api/messes`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({
-          ...newMessData,
-          city: newMessData.city,
-          state: newMessData.state,
-          cuisineType: newMessData.cuisineType, // Ensure cuisineType is included in the payload
-        }),
+      const { data: created } = await apiClient.post("/messes", {
+        ...newMessData,
+        city: newMessData.city,
+        state: newMessData.state,
+        cuisineType: newMessData.cuisineType,
       });
-      if (!res.ok) throw new Error("Failed to add mess");
-      const created = await res.json();
       const mapped: Mess = {
         id: created._id,
         name: created.name,

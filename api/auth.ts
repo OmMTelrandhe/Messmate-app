@@ -47,7 +47,7 @@
 // };
 
 
-import apiClient from './axiosClient'; // <-- NEW IMPORT
+import apiClient from './axiosClient';
 
 interface User {
   _id: string;
@@ -56,37 +56,47 @@ interface User {
   role: string;
 }
 
-// 1. New function to fetch the user profile using the JWT (protected route)
-export const fetchUserMe = async (): Promise<User | null> => {
-  const token = localStorage.getItem('jwtToken');
-  if (!token) {
-    return null;
-  }
-  
-  try {
-    // This call will automatically include the JWT via the apiClient interceptor
-    const response = await apiClient.get<User>('/auth/me');
-    return response.data;
-  } catch (error) {
-    // If 401, the interceptor handles token removal.
-    console.error("Error fetching user profile:", error);
-    return null;
-  }
+const authAPI = {
+  async login(email: string, password: string): Promise<User> {
+    const res = await apiClient.post<{ token: string } & User>('/auth/login', { email, password });
+    if (res.data.token) {
+      localStorage.setItem('jwtToken', res.data.token);
+    }
+    return {
+      _id: res.data._id,
+      name: res.data.name,
+      email: res.data.email,
+      role: res.data.role,
+    };
+  },
+  async register(name: string, email: string, password: string, role: string): Promise<User> {
+    const res = await apiClient.post<{ token: string } & User>('/auth/register', { name, email, password, role });
+    if (res.data.token) {
+      localStorage.setItem('jwtToken', res.data.token);
+    }
+    return {
+      _id: res.data._id,
+      name: res.data.name,
+      email: res.data.email,
+      role: res.data.role,
+    };
+  },
+  async logout(): Promise<void> {
+    localStorage.removeItem('jwtToken');
+    try {
+      await apiClient.post('/auth/logout');
+    } catch {}
+  },
+  async getProfile(): Promise<User | null> {
+    const token = localStorage.getItem('jwtToken');
+    if (!token) return null;
+    try {
+      const res = await apiClient.get<User>('/auth/me');
+      return res.data;
+    } catch {
+      return null;
+    }
+  },
 };
 
-// 2. The Google Login initiation remains the same (just redirects)
-export const startGoogleAuth = () => {
-  // Redirect the browser to the backend's Google auth endpoint
-  window.location.href = `${apiClient.defaults.baseURL.replace('/api', '')}/auth/google`;
-};
-
-// 3. The logout function is now just clearing the token
-export const logoutUser = () => {
-  localStorage.removeItem('jwtToken');
-  // You can optionally send a POST to the backend for session cleanup, 
-  // but for stateless JWT, clearing client storage is the primary action.
-};
-
-// --- REMOVED: Any functions related to password/register if not used ---
-// If you have registerUser or loginUser functions, ensure they now expect a JWT
-// in the response body if you are using local authentication.
+export { authAPI };

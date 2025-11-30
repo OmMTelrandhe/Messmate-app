@@ -20,16 +20,20 @@
 
 // export default generateTokenAndSetCookie;
 
-
 import jwt from "jsonwebtoken";
-
-// Use a fallback for the secret, but ensure it is set in Railway env variables
-const JWT_SECRET = process.env.JWT_SECRET || "a-strong-jwt-fallback-secret-for-dev";
 
 // Generates a token containing the user's ID, signed with the secret.
 const generateToken = (id: string): string => {
-  return jwt.sign({ id }, JWT_SECRET, {
-    expiresIn: "30d", // Token is valid for 30 days
+  const secret =
+    process.env.JWT_SECRET || "a-strong-jwt-fallback-secret-for-dev";
+  console.log(
+    "Token: issuing for",
+    id,
+    "secret source",
+    process.env.JWT_SECRET ? "env" : "fallback"
+  );
+  return jwt.sign({ id }, secret, {
+    expiresIn: "30d",
   });
 };
 

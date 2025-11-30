@@ -9,41 +9,60 @@ import { UserRole } from "../types";
 const protect: RequestHandler = async (req, res, next) => {
   let token;
 
-  // 1. Check for the JWT cookie
-  // The cookie-parser middleware ensures 'req.cookies.jwt' is available
-  if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
   }
 
   if (!token) {
-    // No token found, user is not authorized
     return res.status(401).json({ message: "Not authorized, no token." });
   }
 
   try {
-    // 2. Verify the token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload & {
-      userId: string;
-    };
+    console.log("Auth: Bearer token received");
+    const envSecret = process.env.JWT_SECRET;
+    const fallbackSecret = "a-strong-jwt-fallback-secret-for-dev";
+    const decodedPreview = jwt.decode(token, { complete: true }) as any;
+    console.log(
+      "Auth: token header",
+      decodedPreview?.header,
+      "payload",
+      decodedPreview?.payload
+    );
+    let decoded: JwtPayload & { id: string };
+    try {
+      decoded = jwt.verify(token, envSecret || fallbackSecret) as JwtPayload & {
+        id: string;
+      };
+    } catch (e: any) {
+      if (envSecret && e?.name === "JsonWebTokenError") {
+        console.warn("Auth: env secret failed, trying fallback");
+        decoded = jwt.verify(token, fallbackSecret) as JwtPayload & {
+          id: string;
+        };
+      } else {
+        throw e;
+      }
+    }
+    console.log("Auth: decoded payload", decoded);
 
-    // 3. Find the user in the database (excluding the sensitive password field)
-    const user = await User.findById(decoded.userId).select("-password");
+    const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
+      console.warn("Auth: user not found for id", decoded.id);
       return res.status(404).json({ message: "User not found." });
     }
 
-    // 4. Attach the user object to the request for access in controllers
     req.user = {
       _id: user._id as mongoose.Types.ObjectId,
       role: user.role,
     };
 
-    next(); // Proceed to the next middleware or controller
+    next();
   } catch (error) {
-    console.error("JWT verification failed:", error);
-    // Clear the invalid token cookie
-    res.cookie("jwt", "", { httpOnly: true, expires: new Date(0) });
+    console.error("Auth: verification error", error);
     res
       .status(401)
       .json({ message: "Not authorized, token failed or expired." });

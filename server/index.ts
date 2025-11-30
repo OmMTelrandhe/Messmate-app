@@ -89,7 +89,8 @@ import messRoutes from "./routes/messRoutes";
 import passport from "passport";
 import setupGoogleStrategy from "./config/passport";
 
-dotenv.config();
+const nodeEnv = process.env.NODE_ENV === 'production' ? 'production' : 'development';
+dotenv.config({ path: nodeEnv === 'production' ? '.env' : '.env.development' });
 
 connectDB();
 
