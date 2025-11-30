@@ -20,7 +20,7 @@ const app = express();
 app.set("trust proxy", 1); 
 
 // --- Global Environment Variables ---
-const PORT = process.env.PORT || 5000;
+const PORT = parseInt(process.env.PORT || '5000', 10);
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 const SESSION_SECRET = process.env.SESSION_SECRET || "b83e9b1238350ecc51095c274bdddbea";
 
