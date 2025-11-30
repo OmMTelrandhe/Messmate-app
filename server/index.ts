@@ -53,7 +53,7 @@ app.use(
       maxAge: 24 * 60 * 60 * 1000,
 
       // secure: true is now correctly enabled by 'trust proxy'
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
 
       httpOnly: true,
 
